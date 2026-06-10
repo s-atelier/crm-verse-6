@@ -2,7 +2,7 @@
 // sw.js — Pivo CRM
 // Mỗi lần deploy: đổi CACHE_VERSION (copy y chang vào APP_VERSION trong index.html)
 // ─────────────────────────────────────────────────────────────
-const CACHE_VERSION = 'pivo-20260609-0854';
+const CACHE_VERSION = 'pivo-20260610-0852';
 const CACHE_STATIC  = CACHE_VERSION + '-static';
 
 // Chỉ cache CDN assets (JS/CSS libraries) — KHÔNG cache index.html
