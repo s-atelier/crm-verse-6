@@ -1165,12 +1165,12 @@
         //  Thành viên mở file lên sẽ tự lấy cấu hình này, không cần tự nhập
         // ============================================================
         // ── Phiên bản build — đổi chuỗi này mỗi lần deploy (giống CACHE_NAME trong sw.js) ──
-        const APP_VERSION = "pivo-20260610-0950";
+        const APP_VERSION = "pivo-20260610-0521";
         // ============================================================
 
         const APP_CONFIG = {
             // Google Sheets Web App URL (bắt buộc để đồng bộ dữ liệu)
-            sheetUrl: "https://script.google.com/macros/s/AKfycbzii4rMMpZk6IWeLphFwrEpt9po12saoksPgZh0U6oeBqGGMtQVbj7O58gytXSQQEvjrQ/exec",          // Ví dụ: "https://script.google.com/macros/s/AKfy.../exec"
+            sheetUrl: "https://script.google.com/macros/s/AKfycbykV2dvqdJhmXkQy90EE3SgtPWF3aEf2alxH1OSzg8RPVdoHdQx3obgw5dSN9nwUXW_Jw/exec",          // Ví dụ: "https://script.google.com/macros/s/AKfy.../exec"
 
             // Telegram Bot Token & Chat ID (để nhận thông báo tự động)
             telegramToken:  "8602724932:AAFDps6gbW0KuOzv2ZxiWAZ8UXrmi9oWzLI",    // Ví dụ: "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
@@ -1673,48 +1673,11 @@ function buildResponse(data) {
         }
 
         // ── Tự động kéo dữ liệu từ Sheet khi đăng nhập ──
-        async function autoPullOnLogin() {
-            const url = getConfig('crm_sheet_url', 'sheetUrl');
-            if (!url) return;
-            try {
-                // Dùng GET để tránh CORS redirect issue với GAS
-                const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-                const json = await res.json();
-                // doGet trả về array trực tiếp, không bọc trong object
-                const arr = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
-                if (arr.length === 0) return;
-                const parsedData = arr.map(item => {
-                    if (item.budget) item.budget = Number(item.budget) || 0;
-                    if (item.actualValue) item.actualValue = Number(item.actualValue) || 0;
-                    const existing = customers.find(c => c.id === item.id);
-                    if ((!item.contactDate || !item.contactDate.includes('T')) && existing && existing.contactDate) {
-                        item.contactDate = existing.contactDate;
-                    }
-                    if (existing && Array.isArray(existing.notesList) && existing.notesList.length > 0) {
-                        item.notesList = existing.notesList;
-                    } else if (!Array.isArray(item.notesList)) {
-                        item.notesList = [];
-                    }
-                    if (!Array.isArray(item.attachments) || item.attachments.length === 0) {
-                        const names = (item.attachmentNames || '').split(' | ').map(s => s.trim()).filter(Boolean);
-                        const links = (item.attachmentLinks || '').split(' | ').map(s => s.trim()).filter(Boolean);
-                        item.attachments = names.length > 0
-                            ? names.map((name, i) => ({ name, driveLink: links[i] || '' }))
-                            : [];
-                    }
-                    return item;
-                });
-                customers = parsedData;
-                safeSetCustomers();
-                renderDashboard();
-                renderCustomerList();
-                renderKanban();
-                renderCalendar();
-                showToast('Đã đồng bộ ' + parsedData.length + ' khách hàng từ Sheet!', 'success');
-                console.log('[CRM] Auto-pull: ' + parsedData.length + ' khách hàng');
-            } catch(e) {
-                console.warn('[CRM] Auto-pull lỗi:', e.message);
-            }
+        // autoPullOnLogin: dùng lại silentPullFromSheet đã hoạt động sẵn
+        function autoPullOnLogin() {
+            silentPullFromSheet(function(ok) {
+                if (ok) showToast('Đã đồng bộ dữ liệu từ Sheet!', 'success');
+            });
         }
 
         // Init App
